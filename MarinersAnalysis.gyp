@@ -113,6 +113,8 @@ tilt_dict = {'01:00:00.0000000': '01:00',
 baseball = baseball.replace({'tilt': tilt_dict})
 baseballTest = baseballTest.replace({'tilt': tilt_dict})
 
+baseball = baseball.dropna()
+
 baseballX = baseball[[ 'level',
                                 'pitcher_id', ## cut?
                                 'pitcher_side',
@@ -166,7 +168,6 @@ for col in baseballX:
             print(col)
 
 
-baseballX = baseballX.dropna()
 
 
 #%%
@@ -193,7 +194,11 @@ classBalance = len(baseballX[baseballX.is_swing == 1]) / len(baseballX)
 
 ## Additional libraries 
 from category_encoders import *
-
+from collections import Counter
+from sklearn.decomposition import PCA
+from boruta import BorutaPy
+from sklearn.ensemble import RandomForestRegressor
+import numpy as np
 
 ## Target Encoding 
 encodedColumns = []
@@ -215,9 +220,51 @@ baseballX = baseballX.drop(encodedColumns, axis=1)
 corrMatrix = pd.DataFrame(baseballX.corr()).abs()
 corrMatrix.loc['average'] = corrMatrix.mean()
 
+high_corrs = []
+for idx,row in corrMatrix.iterrows(): 
+    for col in corrMatrix.columns: 
+        if (row[col] < 1) & (row[col] > 0.8): 
+            high_corrs.append(idx)
+            high_corrs.append(col)
 
+Counter(high_corrs)
 
+## Removing the following for high correlation: 
+# Consolidating related variables into one variable 
+pca = PCA(n_components=1)
+hor_location = pca.fit_transform(baseballX[['x55', 'horz_release_angle', 'rel_side', 'pitcher_side_Encoded']])
+pca.explained_variance_ratio_
 
+pca = PCA(n_components=1)
+ver_location = pca.fit_transform(baseballX[['release_speed', 'vert_break', 'zone_speed', 'induced_vert_break']])
+pca.explained_variance_ratio_
+
+## Between release height and Z55, we take release height (lower average variation)
+baseballX = baseballX.drop(list(set(high_corrs)), axis=1)
+baseballX['ver_location'] = ver_location
+baseballX['hor_location'] = hor_location
+
+#%%
+## Boruta Feature 
+###initialize Boruta
+forest = RandomForestRegressor(
+   n_jobs = -1, 
+   max_depth = 2, 
+   verbose = 2
+)
+boruta = BorutaPy(
+   estimator = forest, 
+   n_estimators = 'auto',
+   max_iter = 5, # number of trials to perform, 
+   verbose = 2
+)
+### fit Boruta (it accepts np.array, not pd.DataFrame)
+boruta.fit(np.array(baseballX), np.array(baseballY))
+### print results
+green_area = baseballX.columns[boruta.support_].to_list()
+blue_area = baseballX.columns[boruta.support_weak_].to_list()
+print('features in the green area:', green_area)
+print('features in the blue area:', blue_area)
 
 
 #%% 
