@@ -1,1 +1,1 @@
-# MarinersAnalysis
+# MLB Swing Analysis
