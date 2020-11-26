@@ -93,6 +93,7 @@ The original column, Letter in this case, is typically dropped.
 An example is show below:
 
 Letter | sA | isB | isC | Dep_Variable
+--- | --- | --- | --- | --- 
 A | 1 | 0 | 0 | 1
 C | 0 | 0 | 1 | 1
 
@@ -105,6 +106,7 @@ of Letter until the entire column becomes a numeric. Then, the column is treated
 numeric. Another example is shown below using the same data as above:
 
 Letter | Dep_Variable
+--- | --- 
 0.7 | 1
 0.4 | 1
 
@@ -159,6 +161,7 @@ For example, say we had a dataset like the one referenced earlier; Boruta would
 produce the following data:
 
 Letter | Letter_Randomized | Dep_Variable
+--- | --- | --- 
 0.6 | 0.9 | 1
 0.1 | 0.6 | 0
 0.9 | 0.1 | 1
